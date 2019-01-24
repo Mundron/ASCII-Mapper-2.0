@@ -1,0 +1,771 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE MudletPackage>
+<MudletPackage version="1.001">
+	<ScriptPackage>
+		<ScriptGroup isActive="yes" isFolder="yes">
+			<name>Mapper Mundron Skripte</name>
+			<packageName></packageName>
+			<script></script>
+			<eventHandlerList />
+			<Script isActive="yes" isFolder="no">
+				<name>Mapper core</name>
+				<packageName></packageName>
+				<script>-------------------------------------------------
+--                                             --
+--        Basic structure of the mapper        --
+--                    ~ by ~                   --
+--                   Mundron                   --
+--                                             --
+-------------------------------------------------
+-- 
+--	minr/maxr = minimal/maximal rowindex
+--	minc/maxc = minimal/maximal columnindex
+--	minl/maxl = minimal/maximal layerindex
+--	row/column/layer = index of current row/column/layer
+--	enterfrom = direction, which was used to get in current room
+--	map = contains the map. 	Index 1 = layer 
+--														Index 2 = row 
+--                            Index 3 =	column
+--        The 4. deeps contains different boolean variables                  
+--				First, visited is true is this room was already visited
+--				Next, is contains directions, which are true, if they are possible exits 
+--				Finally, the room id is save for the case that the player is bumbed out of a room 
+--
+--	marks = special marked rooms
+
+ASCIIMapper = {minr=1, maxr=1, minc=1, maxc=1, minl=1,maxl=1, row=1, column=1, layer=1, enterfrom="", map={{{{}}}},marks={},mapperblocker={{}},active=false}
+
+-- 	directions which are accepted for the mapper
+
+ASCIIMapper.accepteddirections = {norden=true, nordosten=true, osten=true, suedosten=true, sueden=true, suedwesten=true, westen=true, nordwesten=true, oben=true, unten=true}
+
+--	movetable contains a calculation table which tells how to change the index of the layer, row and column, in this order,
+--	if the player moves in that direction
+
+ASCIIMapper.movetable ={norden={0,-1,0},nordosten={0,-1,1},osten={0,0,1},suedosten={0,1,1},sueden={0,1,0},suedwesten={0,1,-1},westen={0,0,-1},nordwesten={0,-1,-1},oben={1,0,0},unten={-1,0,0}}
+
+-- for the mapperblocker input, we will allow the convinient input w instead of west. But to recognise it
+-- we have to du translate these short directions
+
+ASCIIMapper.translateddirections = {n="norden", no="nordosten", o="osten", so="suedosten", s="sueden", sw="suedwesten", w="westen", nw="nordwesten"}
+</script>
+				<eventHandlerList />
+			</Script>
+			<Script isActive="yes" isFolder="no">
+				<name>updateMapperWhenRoomChanges</name>
+				<packageName></packageName>
+				<script>-------------------------------------------------
+--                                             --
+--   Function to update the map if entered     --
+--								a new room									 --
+--                    ~ by ~                   --
+--                   Mundron                   --
+--                                             --
+-------------------------------------------------
+
+function updateMapperWhenRoomChanges()
+
+	local roomid = gmcp.MG.room.info.id
+
+	-- if mapper is active, then update the mapper
+	if ASCIIMapper.active then
+		-- first, we have to check whether your came through a valid direction
+		if ASCIIMapper.accepteddirections[ASCIIMapper.enterfrom] then
+			-- compute the next index
+			local l=ASCIIMapper.layer + ASCIIMapper.movetable[ASCIIMapper.enterfrom][1]
+			local r=ASCIIMapper.row + ASCIIMapper.movetable[ASCIIMapper.enterfrom][2]
+			local c=ASCIIMapper.column + ASCIIMapper.movetable[ASCIIMapper.enterfrom][3]
+			
+			local updateroom = false
+			
+			-- now check if the new index is inside the boundary
+			if (ASCIIMapper.minl &lt; l+1 and ASCIIMapper.maxl+1&gt;l and ASCIIMapper.minr &lt;r+1 and ASCIIMapper.maxr+1&gt;r and ASCIIMapper.minc &lt; c+1 and ASCIIMapper.maxc+1&gt; c) then
+				-- if the new index is inside the boundaries, then we have to check for some contradiction
+				-- hence, we check if there exists the room id on the map at some position different to the new room
+				if ASCIIMapper:checkID(roomid,l,r,c) then
+					-- in that case, the mapper can't be use because the map doesn't satisfy the conditions for the mapper
+					display("FEHLER: Dieser Raum befindet sich auf der Karte schon an einer anderen Stelle! Mapper wurde deaktiviert")
+					ASCIIMapper.active=false
+				else
+					-- Here, we know that the new index is inside the boundary and the room id doesn't
+					-- exists somewhere else on the map. 
+    			if ASCIIMapper.map[l][r][c].visited then
+						-- Here, the room war already visited, but does the room id match?
+						if  ASCIIMapper.map[l][r][c].roomid == roomid then
+    					-- Hell yeah, the room id matches! Then we just need to update the current index!
+							ASCIIMapper.layer = l
+      				ASCIIMapper.row = r
+      				ASCIIMapper.column = c
+						else
+							-- Fuck, no! You were already in this room but you got somehow to here
+							-- although you shouldn't get here!
+							display("FEHLER: Widerspruch in der Raum-ID! Mapper wurde im Vorraum ausgeschaltet!")
+							ASCIIMapper.active=false	
+						end    				
+    			else
+						-- ok, you are in a new room inside the boundaries. Then we update this room
+						updateroom=true
+  				end
+				end
+			else -- new index is outside the boundaries
+				-- in this case we have to expand the field for the map
+				updateroom=true -- after this case, we have to update the room
+				-- check column boundaries
+				if c&lt;ASCIIMapper.minc or c&gt;ASCIIMapper.maxc then 
+					-- the column is outside the column boundaries, hence we add new columns
+        	for i=ASCIIMapper.minl,ASCIIMapper.maxl,1 do
+        		for j=ASCIIMapper.minr,ASCIIMapper.maxr,1 do
+        			ASCIIMapper.map[i][j][c]={}
+        			ASCIIMapper.map[i][j][c].visited=false
+       			end
+      		end
+     		end
+        -- update the boundary for the column
+        if c&lt;ASCIIMapper.minc then
+        	ASCIIMapper.minc=c
+        end
+        if c&gt;ASCIIMapper.maxc then
+       		ASCIIMapper.maxc=c
+      	end
+				-- check row boundaries
+        if r&lt;ASCIIMapper.minr or r&gt;ASCIIMapper.maxr then  
+					-- the row is outside the row boundaries, hence we add new rows
+        	for i=ASCIIMapper.minl,ASCIIMapper.maxl,1 do
+        		ASCIIMapper.map[i][r]={}
+   	    		for j=ASCIIMapper.minc,ASCIIMapper.maxc,1 do
+    	   			ASCIIMapper.map[i][r][j]={}
+     					ASCIIMapper.map[i][r][j].visited=false
+     				end
+        	end
+        end
+				-- update the boundary for the row
+        if r&lt;ASCIIMapper.minr then
+        	ASCIIMapper.minr=r
+        end
+        if r&gt;ASCIIMapper.maxr then
+        	ASCIIMapper.maxr=r
+        end
+				-- check layer boundaries
+        if l&lt;ASCIIMapper.minl or l&gt;ASCIIMapper.maxl then
+					-- the layer is outside the layer boundaries, hence we add new layers
+        	ASCIIMapper.map[l]={}
+        	for i=ASCIIMapper.minr,ASCIIMapper.maxr,1 do
+        		ASCIIMapper.map[l][i]={}
+        		for j=ASCIIMapper.minc,ASCIIMapper.maxc,1 do
+        			ASCIIMapper.map[l][i][j]={}
+        			ASCIIMapper.map[l][i][j].visited=false
+        		end
+        	end
+        end
+        -- update the boundary for the layer
+       	if l&lt;ASCIIMapper.minl then
+       		ASCIIMapper.minl=l
+       	end
+       	if l&gt;ASCIIMapper.maxl then
+       		ASCIIMapper.maxl=l
+        end
+			end -- new index is inside the boundaries
+			-- we check different cases and desided whether to include the room data or not
+			if updateroom then
+				ASCIIMapper.map[l][r][c].visited=true
+				
+				ASCIIMapper.map[l][r][c].roomid=roomid
+				
+				ASCIIMapper.layer = l
+      	ASCIIMapper.row = r
+      	ASCIIMapper.column = c
+						        			
+     		for i=1,#gmcp.MG.room.info.exits,1 do
+     			if ASCIIMapper.accepteddirections[gmcp.MG.room.info.exits[i]] then
+						ASCIIMapper.map[l][r][c][gmcp.MG.room.info.exits[i]]=true
+  				else
+						-- Give warning because the room has some exits which are not valid for the mapper
+						display("WARNUNG: Dieser Raum hat den Ausgang "..gmcp.MG.room.info.exits[i].." welches fuer den Mapper nicht geeignet ist!")
+					end
+    		end
+				-- if up or down are exits, then we have to mark it on the map
+				if ASCIIMapper.map[l][r][c].unten then
+     			if ASCIIMapper.map[l][r][c].oben then
+   					ASCIIMapper:markroom("B")
+     			else
+      			ASCIIMapper:markroom("R")
+    			end
+   			else
+   				if ASCIIMapper.map[l][r][c].oben then
+   					ASCIIMapper:markroom("H")
+     			end
+       	end
+			end
+		else
+			-- if you move to a not allowed direction
+			display("FEHLER: Nicht zulaessige Bewegungsrichtung benutzt! Mapper deaktiviert!")
+			ASCIIMapper.active=false
+		end -- if player comes through valid direction
+	end -- if mapper is active
+end -- function</script>
+				<eventHandlerList>
+					<string>gmcp.MG.room</string>
+				</eventHandlerList>
+			</Script>
+			<Script isActive="yes" isFolder="no">
+				<name>Basic functions of the mapper</name>
+				<packageName></packageName>
+				<script>-------------------------------------------------
+--                                             --
+--               Basic functions               --
+--                    ~ by ~                   --
+--                   Mundron                   --
+--                                             --
+--	ASCIIMapper:init()												 --
+--	ASCIIMapper:markroom(s)										 --
+--	ASCIIMapper:addblocker(dir)								 --
+--	ASCIIMapper:deleteblocker(dir)						 --
+--	ASCIIMapper:deleteallblocker()						 --
+--	ASCIIMapper:checkID(id,l,r,c)							 --
+--	ASCIIMapper:continue()										 --
+--	ASCIIMapper:stop()												 --
+--	ASCIIMapper:roominfo()										 --
+--																						 --
+-------------------------------------------------
+
+-------------------------------------------------
+-- Initialize the mapper
+-------------------------------------------------
+function ASCIIMapper:init()
+		display("Starte Initialisierung")
+		self.minr=1
+		self.maxr=1
+		self.minc=1
+		self.maxc=1
+		self.minl=1
+		self.maxl=1
+		self.row=1
+		self.column=1
+		self.layer=1
+		self.enterfrom=""
+		self.map={{{{}}}}
+		self.marks={}
+		self.mapperblocker={{}}
+		self.active=true
+		-- the room in which the player actually stays is obviously visited
+		self.map[1][1][1].visited = true 
+		self.map[1][1][1].roomid = gmcp.MG.room.info.id	
+		-- if the room-id is an empty string, then the player
+		-- stays in an dynamic area. The mapper will not work there
+		-- Hence the player get a warnung an the mapper turns of
+		
+		if gmcp.MG.room.info.id == "" then
+			display("WARNUNG: Der Raum ist dynamisch erzeugt. Der Mapper kann hier nicht funktionieren!")
+			self.active=false
+		else
+			self.active=true
+			-- save possible exits of this room
+			for i=1,#gmcp.MG.room.info.exits,1 do -- speichere Ausgaenge
+				self.map[1][1][1][gmcp.MG.room.info.exits[i]]=true
+			end	
+			-- if up or down is a possible exit, we have to mark it
+  		if self.map[1][1][1].unten then
+  			if self.map[1][1][1].oben then
+  				self:markroom("B")
+  			else
+  				self:markroom("R")
+  			end
+  		else
+  			if self.map[1][1][1].oben then
+  				self:markroom("H")
+  			end
+  		end
+		end
+		
+	display("Initialisierung abgeschlossen")
+end
+
+-------------------------------------------------
+-- give the room a personal mark
+-------------------------------------------------
+
+function ASCIIMapper:markroom(s)
+	self.marks[{self.layer,self.row,self.column}]=s
+end
+
+-------------------------------------------------
+-- add blocker to the map
+-------------------------------------------------
+
+function ASCIIMapper:addblocker(dir)
+	if not self.mapperblocker[gmcp.MG.room.info.id] then
+		self.mapperblocker[gmcp.MG.room.info.id]={}
+	end
+	-- it is convinient to use w instead of west
+	-- as the input parameter. But that will
+	-- not be recognised since the mapper checks
+	-- just west. Therefore we use a translation
+	-- w -&gt; west
+	if self.translateddirections[dir] then
+		dir=self.translateddirections[dir]
+	end
+	self.mapperblocker[gmcp.MG.room.info.id][dir]=true
+	display("Mapper wird von diesem Raum nach "..dir.." gestoppt.")
+end
+
+-------------------------------------------------
+-- delete blocker from the map
+-------------------------------------------------
+
+function ASCIIMapper:deleteblocker(dir)
+	if self.translateddirections[dir] then
+		dir=self.translateddirections[dir]
+	end
+	if self.mapperblocker[gmcp.MG.room.info.id] then
+		if self.mapperblocker[gmcp.MG.room.info.id][dir] then
+			self.mapperblocker[gmcp.MG.room.info.id][dir]=nil
+			display("Stopper in Richtung "..dir.." wurde aus diesem Raum entfernt.")
+		else
+			display("Dieser Raum hat keinen Stopper in Richtung "..dir..".")
+		end
+	else
+		display("Dieser Raum hat ueberhaupt keine Stopper registriert.")
+	end
+end
+
+-------------------------------------------------
+-- delete all blocker from the map
+-------------------------------------------------
+
+function ASCIIMapper:deleteallblocker()
+	self.mapperblocker={}
+	display("Alle Stopper wurden radikal geloescht.")
+end
+
+-------------------------------------------------
+-- check whether the id exists already on the 
+-- map outside the index (l,r,c)
+-------------------------------------------------
+
+function ASCIIMapper:checkID(id,l,r,c)
+	local result=false
+	for i=self.minl,self.maxl,1 do
+		if not(i==l) then
+			for j=self.minr,self.maxr,1 do
+				if not(j==r) then
+					for k=self.minc,self.maxc,1 do
+						if not(k==c) then
+							result = (result or (self.map[i][j][k].roomid == id))
+						end
+					end
+				end
+			end
+		end
+	end
+	return result
+end
+
+-------------------------------------------------
+-- try to continue the mapper
+-------------------------------------------------
+
+function ASCIIMapper:continue()
+	ASCIIMapper.active= (self.map[self.layer][self.row][self.column].roomid == gmcp.MG.room.info.id)
+	if ASCIIMapper.active then
+		display("Mapper wird weiter ausgefuehrt")
+	else
+		display("Du befindest dich nicht in dem Raum, in dem der Mapper ausgeschaltet wurde.")
+	end
+end
+
+-------------------------------------------------
+-- stop the mapper
+-------------------------------------------------
+
+function ASCIIMapper:stop()
+	display("Mapper wurde angehalten")
+	self.active=false
+	self.showmapdoublesize()
+end
+
+-------------------------------------------------
+-- get the information about the current room
+-------------------------------------------------
+
+function ASCIIMapper:roominfo()
+	display("Index ("..self.layer.."|"..self.row.."|"..self.column..") und Raum-ID "..self.map[self.layer][self.row][self.column].roomid)
+end
+
+
+</script>
+				<eventHandlerList />
+			</Script>
+			<Script isActive="yes" isFolder="no">
+				<name>show and save map</name>
+				<packageName></packageName>
+				<script>-------------------------------------------------
+--      Functions to show and save the map     --
+--                    ~ by ~                   --
+--                   Mundron                   --
+--                                             --
+--	ASCIIMapper:showmap()											 --
+--	ASCIIMapper:showmapdoublesize()						 --
+--	ASCIIMapper:savemap(filename)							 --
+--	ASCIIMapper:savemapdoublesize(filename)		 --
+--	ASCIIMapper:showmaplayer(l)								 --
+--	ASCIIMapper:showmaplayerdoublesize(l)			 --
+--                                             --
+-------------------------------------------------
+
+function ASCIIMapper:showmap()
+	for l=self.minl,self.maxl,1 do
+		echo("\n\nLayer "..(l-1).."\n\n")
+		echo(self:showmaplayer(l))
+	end
+end
+
+function ASCIIMapper:showmapdoublesize()
+	for l=self.minl,self.maxl,1 do
+		echo("\n\nLayer "..(l-1).."\n\n")
+		echo(self:showmaplayerdoublesize(l))
+	end
+end
+
+function ASCIIMapper:savemap(filename)
+		-- directory of the folder where you like to save your self.column
+		local mapsavedir="C:/Users/Mundron/Desktop/" 
+		echo("Speichere die Karte in "..mapsavedir..filename..".txt\n")
+		file = io.open(mapsavedir..filename..".txt", "w")
+		echo("Es werden die "..(self.maxl-self.minl+1).." Layer gespeichert...\n")
+		for l=self.minl,self.maxl,1 do
+			echo("Layer "..(l-1).." gespeichert.\n")
+			file:write("\n\nLayer "..(l-1).."\n\n")
+			file:write(self:showmaplayer(l))
+		end
+		io.close(file)
+		echo("Speicherungen in die Datei "..filename..".txt abgeschlossen.")
+end
+
+function ASCIIMapper:savemapdoublesize(filename)
+		-- directory of the folder where you like to save your self.column
+		local mapsavedir="C:/Users/Mundron/Desktop/" 
+		echo("Speichere die Karte in "..mapsavedir..filename..".txt\n")
+		file = io.open(mapsavedir..filename..".txt", "w")
+		echo("Es werden die "..(self.maxl-self.minl+1).." Layer gespeichert...\n")
+		for l=self.minl,self.maxl,1 do
+			echo("Layer "..(l-1).." gespeichert.\n")
+			file:write("\n\nLayer "..(l-1).."\n\n")
+			file:write(self:showmaplayerdoublesize(l))
+		end
+		io.close(file)
+		echo("Speicherungen in die Datei "..filename..".txt abgeschlossen.")
+end
+
+function ASCIIMapper:showmaplayer(l)
+
+	local mape=self.map[l]
+	local anzmap={}
+	local maxi=self.maxr-self.minr+1 -- Zeilenanzahl = Differenz der Zeilengrenzen (+1 wegen der 0)
+	local maxj=self.maxc-self.minc+1 -- Zeilenanzahl = Differenz der Zeilengrenzen (+1 wegen der 0)
+	for i=1,2*maxi+1,1 do
+		anzmap[i]={}
+		for j=1,2*maxj+1,1 do
+			anzmap[i][j]=" "
+		end
+	end
+	
+	-- add the visited rooms
+	for i=1,maxi,1 do
+		for j=1,maxj,1 do
+			if mape[i+self.minr-1][j+self.minc-1].visited then
+				anzmap[2*i][2*j]="O"
+			else
+				anzmap[2*i][2*j]=" "
+			end
+		end
+	end
+	
+	-- add marks
+	for pos,mark in pairs(self.marks) do
+		if pos[1]==l then
+			anzmap[2*(pos[2]-self.minr+1)][2*(pos[3]-self.minc+1)]=mark
+		end
+	end
+	
+	-- mark the position on the map with Z
+	if self.layer==l then
+		anzmap[2*(self.row-self.minr+1)][2*(self.column-self.minc+1)]="Z"
+	end
+	
+	-- add east-west pathes
+	for i=1,maxi,1 do
+		-- left boundary
+		if mape[i+self.minr-1][self.minc].westen then 
+			anzmap[2*i][1]="-"
+		else
+			anzmap[2*i][1]=" "
+		end
+		-- between the points
+		for j=2,maxj,1 do 
+			if mape[i+self.minr-1][j+self.minc-1].westen or mape[i+self.minr-1][j+self.minc-2].osten then
+				anzmap[2*i][2*j-1]="-"
+			else
+				anzmap[2*i][2*j-1]=" "
+			end
+		end
+		-- right boundary
+		if mape[i+self.minr-1][self.maxc].osten then 
+			anzmap[2*i][2*maxj+1]="-"
+		else
+			anzmap[2*i][2*maxj+1]=" "
+		end
+	end
+	
+	-- add north-south pathes
+	for j=1,maxj,1 do
+		-- upper boundary
+		if mape[self.minr][j+self.minc-1].norden then
+			anzmap[1][2*j]="|"
+		else
+			anzmap[1][2*j]=" "
+		end
+		-- between the points
+		for i=2,maxi,1 do
+			if mape[i+self.minr-1][j+self.minc-1].norden or mape[i+self.minr-2][j+self.minc-1].sueden then
+				anzmap[2*i-1][2*j]="|"
+			else
+				anzmap[2*i-1][2*j]=" "
+			end
+		end
+		-- lower boundary
+		if mape[self.maxr][j+self.minc-1].sueden then
+			anzmap[2*maxi+1][2*j]="|"
+		else
+			anzmap[2*maxi+1][2*j]=" "
+		end
+	end
+	
+	-- add diagonal pathes
+	-- upper and lower boundary
+	for j=2,maxj,1 do
+		-- upper boundary
+		if mape[self.minr][j+self.minc-2].nordosten  then
+			if mape[self.minr][j+self.minc-1].nordwesten  then
+				anzmap[1][2*j-1]="X"
+			else
+				anzmap[1][2*j-1]="/"
+			end
+		else
+			if mape[self.minr][j+self.minc-1].nordwesten  then
+				anzmap[1][2*j-1]="\\"
+			else
+				anzmap[1][2*j-1]=" "
+			end
+		end
+		-- lower boundary
+		if mape[self.maxr][j+self.minc-2].suedosten  then
+			if mape[self.maxr][j+self.minc-1].suedwesten  then
+				anzmap[2*maxi+1][2*j-1]="X"
+			else
+				anzmap[2*maxi+1][2*j-1]="\\"
+			end
+		else
+			if mape[self.maxr][j+self.minc-1].suedwesten  then
+				anzmap[2*maxi+1][2*j-1]="/"
+			else
+				anzmap[2*maxi+1][2*j-1]=" "
+			end
+		end
+	end
+	-- left and right boundary
+	for i=2,maxi,1 do
+		-- left boundary
+		if mape[i+self.minr-1][self.minc].nordwesten  then
+			if mape[i+self.minr-2][self.minc].suedwesten  then
+				anzmap[2*i-1][1]="X"
+			else
+				anzmap[2*i-1][1]="\\"
+			end
+		else
+			if mape[i+self.minr-2][self.minc].suedwesten  then
+				anzmap[2*i-1][1]="/"
+			else
+				anzmap[2*i-1][1]=" "
+			end
+		end
+		-- right boundary
+		if mape[i+self.minr-1][self.maxc].nordosten  then
+			if mape[i+self.minr-2][self.maxc].suedosten  then
+				anzmap[2*i-1][2*maxj+1]="X"
+			else
+				anzmap[2*i-1][2*maxj+1]="/"
+			end
+		else
+			if mape[i+self.minr-2][self.maxc].suedosten  then
+				anzmap[2*i-1][2*maxj+1]="\\"
+			else
+				anzmap[2*i-1][2*maxj+1]=" "
+			end
+		end
+	end
+	-- corner
+	-- upper left
+	if mape[self.minr][self.minc].nordwesten then
+		anzmap[1][1]="\\"
+	else
+		anzmap[1][1]=" "
+	end
+	-- upper right
+	if mape[self.minr][self.maxc].nordosten then
+		anzmap[1][2*maxj+1]="/"
+	else
+		anzmap[1][2*maxj+1]=" "
+	end
+	-- lower left
+	if mape[self.maxr][self.minc].suedwesten then
+		anzmap[2*maxi+1][1]="/"
+	else
+		anzmap[2*maxi+1][1]=" "
+	end
+	-- lower right
+	if mape[self.maxr][self.maxc].suedosten then
+		anzmap[2*maxi+1][2*maxj+1]="\\"
+	else
+		anzmap[2*maxi+1][2*maxj+1]=" "
+	end
+	-- center
+	for i=2,maxi,1 do
+		for j=2,maxj,1 do
+			if mape[i+self.minr-2][j+self.minc-2].suedosten or mape[i+self.minr-1][j+self.minc-1].nordwesten  then
+				if mape[i+self.minr-1][j+self.minc-2].nordosten or mape[i+self.minr-2][j+self.minc-1].suedwesten  then
+					anzmap[2*i-1][2*j-1]="X"
+				else
+					anzmap[2*i-1][2*j-1]="\\"
+				end
+			else
+				if mape[i+self.minr-1][j+self.minc-2].nordosten or mape[i+self.minr-2][j+self.minc-1].suedwesten  then
+					anzmap[2*i-1][2*j-1]="/"
+				else
+					anzmap[2*i-1][2*j-1]=" "
+				end
+			end
+		end
+	end
+
+	
+	-- finally we sum up the field to display the map
+	local zeile=""
+	for i=1,2*maxi+1,1 do
+		for j=1,2*maxj+1,1 do
+			zeile=zeile..anzmap[i][j]
+		end
+		zeile=zeile.."\n"
+	end
+	return zeile
+end
+
+
+function ASCIIMapper:showmaplayerdoublesize(l)
+
+	local mape=self.map[l]
+	local anzmap={}
+	local maxi=self.maxr-self.minr+1 -- Zeilenanzahl = Differenz der Zeilengrenzen (+1 wegen der 0)
+	local maxj=self.maxc-self.minc+1 -- Zeilenanzahl = Differenz der Zeilengrenzen (+1 wegen der 0)
+	for i=1,3*maxi+2,1 do
+		anzmap[i]={}
+		for j=1,3*maxj+2,1 do
+			anzmap[i][j]=" "
+		end
+	end
+	
+	-- add the visited rooms
+	for i=1,maxi,1 do
+		for j=1,maxj,1 do
+			if mape[i+self.minr-1][j+self.minc-1].visited then
+				anzmap[3*i][3*j]="O"
+				-- now check for exits and add the lines around the visited room!
+				if mape[i+self.minr-1][j+self.minc-1].norden then
+					anzmap[3*i-1][3*j]="|"	
+				end
+				if mape[i+self.minr-1][j+self.minc-1].nordosten then
+					anzmap[3*i-1][3*j+1]="/"	
+				end
+				if mape[i+self.minr-1][j+self.minc-1].osten then
+					anzmap[3*i][3*j+1]="-"	
+				end
+				if mape[i+self.minr-1][j+self.minc-1].suedosten then
+					anzmap[3*i+1][3*j+1]="\\"	
+				end
+				if mape[i+self.minr-1][j+self.minc-1].sueden then
+					anzmap[3*i+1][3*j]="|"	
+				end
+				if mape[i+self.minr-1][j+self.minc-1].suedwesten then
+					anzmap[3*i+1][3*j-1]="/"	
+				end
+				if mape[i+self.minr-1][j+self.minc-1].westen then
+					anzmap[3*i][3*j-1]="-"	
+				end
+				if mape[i+self.minr-1][j+self.minc-1].nordwesten then
+					anzmap[3*i-1][3*j-1]="\\"	
+				end
+			else
+				anzmap[3*i][3*j]=" "
+			end
+		end
+	end
+	
+	-- add marks
+	for pos,mark in pairs(self.marks) do
+		if pos[1]==l then
+			anzmap[3*(pos[2]-self.minr+1)][3*(pos[3]-self.minc+1)]=mark
+		end
+	end
+	
+	-- mark the position on the map with Z
+	if self.layer==l then
+		anzmap[3*(self.row-self.minr+1)][3*(self.column-self.minc+1)]="Z"
+	end
+
+	-- finally we sum up the field to display the map
+	local zeile=""
+	for i=1,3*maxi+2,1 do
+		for j=1,3*maxj+2,1 do
+			zeile=zeile..anzmap[i][j]
+		end
+		zeile=zeile.."\n"
+	end
+	return zeile
+end</script>
+				<eventHandlerList />
+			</Script>
+			<Script isActive="yes" isFolder="no">
+				<name>saveDirectionForMapper</name>
+				<packageName></packageName>
+				<script>-------------------------------------------------
+--         Put your Lua functions here.        --
+--                                             --
+-- Note that you can also use external Scripts --
+-------------------------------------------------
+
+function saveDirectionForMapper(event, room, direction)
+	-- deactivate mapper if you go through
+	-- a block-point
+	
+	if ASCIIMapper.mapperblocker[room.id] then
+		if ASCIIMapper.mapperblocker[room.id][direction] then
+			display("Mapper wurde gestoppt")
+			ASCIIMapper.active=false
+		else
+			if not ASCIIMapper.active then
+				display("Mapper wurde wieder gestartet!")
+			end
+			ASCIIMapper.active=true
+		end
+	end
+
+	-- save move direction
+	ASCIIMapper.enterfrom=direction
+end
+</script>
+				<eventHandlerList>
+					<string>movedirection</string>
+				</eventHandlerList>
+			</Script>
+		</ScriptGroup>
+	</ScriptPackage>
+</MudletPackage>
