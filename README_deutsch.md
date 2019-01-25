@@ -9,27 +9,27 @@ Ich schaeme mich, da ich eine Menge von globalen Variablen dabei verbraucht habe
 
 Wenn du in ein neues Gebiet gehst, dann kannst du den ASCII-Mapper 2.0 aktivieren und dieser wird deine Bewegung aufzeichnen.
 Auf Abruf wird dir eine Karte von der Gegend, eingeschraenkt auf die bereits besuchten Raeume, in ASCII Art gezeichnet, wie hier:
-              
+
  	 Z           
  	  \          
  	   \   |     
  	   -O--O     
  	    |\/|     
  	    |/\|     
- 	   -O--O--O- 
-              
+ 	   -O--O--O-
 
-     
+
+
 Wenn man eine kleinere Version der Karte bevorzugt, dann kann man es sich auch so darstellen lassen:
 
-         
+
 	Z       
  	 \  |   
  	 -O-O   
  	  |X|   
  	 -O-O-O-
-      
- 
+
+
  WARNUNG: Der Mapper funktioniert nur, wenn die folgenden Bedingungen erfuellt sind:
  - Jeder Raum muss eine eindeutige Raum ID haben
  - Die Raeume muessen auf einem Gitter liegen
@@ -78,9 +78,9 @@ Mit dieser Funktion wird eine einstellige Zahl oder ein einzelner Buchstabe als 
 Wenn diese Funktion mit einer Richtung als Argument ausgerufen wird,
 dann wird der aktuelle Raum als Checkpoint gespeichert mit der Richtung als Ausgang.
 Wenn du den Raum durch den gespeicherten Ausgang verlaesst, dann schaltet
-sich der Mapper automatisch ab und auch wieder automatisch an, wenn 
+sich der Mapper automatisch ab und auch wieder automatisch an, wenn
 in dem Raum ein anderer Ausgang benutzt wird.
-Auf diese Weise kann man Grenzen eines Gebiets markieren, welches du 
+Auf diese Weise kann man Grenzen eines Gebiets markieren, welches du
 kartographieren willst.
 
 ## --	ASCIIMapper:deleteblocker(dir)						 --
@@ -104,7 +104,7 @@ Zeigt die ganze Karte (kleine Version) einschliesslich allen Ebenen im Spiel.
 Zeigt die ganze Karte (grosse Version) einschliesslich allen Ebenen im Spiel.
 
 ## --	ASCIIMapper:savemap(filename)							 --
-Speichert die Karte (kleine Version) in einer Textdatei. Der Speicherpfad muss im Code angepasst werden!
+Speichert die Karte (kleine Version) in einer Textdatei. Der Speicherpfad muss im Code angepasst werden! Nachdem das Paket im Client importiert wurde, kann man den bevorzugten Speicherort im Skript Element "Mapper Core" in Zeile 33 eingeben.
 
 ## --	ASCIIMapper:savemapdoublesize(filename)		 --
-Speichert die Karte (grosse Version) in einer Textdatei. Der Speicherpfad muss im Code angepasst werden!
+Speichert die Karte (grosse Version) in einer Textdatei. Der Speicherpfad muss im Code angepasst werden! Nachdem das Paket im Client importiert wurde, kann man den bevorzugten Speicherort im Skript Element "Mapper Core" in Zeile 33 eingeben.
