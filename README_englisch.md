@@ -50,7 +50,9 @@ The third condition is important, because it is difficult to handle with directi
 
 
 ## How can I use the ASCII-Mapper 2.0?
-First of all, you have to install the evented navigation (https://github.com/Mundron/Evented-Navigation).
+
+First of all, the mapper need a raised event where it gets the direction and room id. I prefer to use the number field on the keyboard and wrote the functions such that is works with my evented navigation (https://github.com/Mundron/Evented-Navigation).
+If you already use the evented navigation because of some other scripts of me, you don't have to install it again oder change something. It is fine to go to the next step:
 Next, you install "Mapper_script_part" and "Mapper_alias_part".
 The "script part" contains the base code with all the nessesary functions.
 But you use it ingame, you should create some alias which calls the mapper functions.
