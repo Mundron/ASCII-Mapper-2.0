@@ -38,7 +38,7 @@ end</script>
 			<Alias isActive="yes" isFolder="no">
 				<name>Markierung erstellen</name>
 				<script>-- aus mir noch nicht erklaerlichen Gruenden ist das Loeschen der Markierungen
--- in der Liste problematisch. Daher ist es einfacher die Markierung 
+-- in der Liste problematisch. Daher ist es einfacher die Markierung
 -- mit O zu ueberschreiben. So wird dann ein nicht markierter Raum auch angezeigt.
 ASCIIMapper:markroom(matches[2])</script>
 				<command></command>

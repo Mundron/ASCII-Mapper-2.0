@@ -17,23 +17,33 @@
 --                   Mundron                   --
 --                                             --
 -------------------------------------------------
--- 
+--
 --	minr/maxr = minimal/maximal rowindex
 --	minc/maxc = minimal/maximal columnindex
 --	minl/maxl = minimal/maximal layerindex
 --	row/column/layer = index of current row/column/layer
 --	enterfrom = direction, which was used to get in current room
---	map = contains the map. 	Index 1 = layer 
---														Index 2 = row 
+--	map = contains the map. 	Index 1 = layer
+--														Index 2 = row
 --                            Index 3 =	column
---        The 4. deeps contains different boolean variables                  
+--        The 4. deeps contains different boolean variables
 --				First, visited is true is this room was already visited
---				Next, is contains directions, which are true, if they are possible exits 
---				Finally, the room id is save for the case that the player is bumbed out of a room 
+--				Next, is contains directions, which are true, if they are possible exits
+--				Finally, the room id is save for the case that the player is bumbed out of a room
 --
 --	marks = special marked rooms
 
-ASCIIMapper = {minr=1, maxr=1, minc=1, maxc=1, minl=1,maxl=1, row=1, column=1, layer=1, enterfrom="", map={{{{}}}},marks={},mapperblocker={{}},active=false}
+
+ASCIIMapper = {minr=1, maxr=1,
+							minc=1, maxc=1,
+							minl=1, maxl=1,
+							row=1, column=1, layer=1,
+							enterfrom="",
+							map={{{{}}}},
+							marks={},
+							mapperblocker={{}},
+							active=false,
+							savedirectory="C:/" }
 
 -- 	directions which are accepted for the mapper
 
@@ -75,9 +85,9 @@ function updateMapperWhenRoomChanges()
 			local l=ASCIIMapper.layer + ASCIIMapper.movetable[ASCIIMapper.enterfrom][1]
 			local r=ASCIIMapper.row + ASCIIMapper.movetable[ASCIIMapper.enterfrom][2]
 			local c=ASCIIMapper.column + ASCIIMapper.movetable[ASCIIMapper.enterfrom][3]
-			
+
 			local updateroom = false
-			
+
 			-- now check if the new index is inside the boundary
 			if (ASCIIMapper.minl &lt; l+1 and ASCIIMapper.maxl+1&gt;l and ASCIIMapper.minr &lt;r+1 and ASCIIMapper.maxr+1&gt;r and ASCIIMapper.minc &lt; c+1 and ASCIIMapper.maxc+1&gt; c) then
 				-- if the new index is inside the boundaries, then we have to check for some contradiction
@@ -88,7 +98,7 @@ function updateMapperWhenRoomChanges()
 					ASCIIMapper.active=false
 				else
 					-- Here, we know that the new index is inside the boundary and the room id doesn't
-					-- exists somewhere else on the map. 
+					-- exists somewhere else on the map.
     			if ASCIIMapper.map[l][r][c].visited then
 						-- Here, the room war already visited, but does the room id match?
 						if  ASCIIMapper.map[l][r][c].roomid == roomid then
@@ -100,8 +110,8 @@ function updateMapperWhenRoomChanges()
 							-- Fuck, no! You were already in this room but you got somehow to here
 							-- although you shouldn't get here!
 							display("FEHLER: Widerspruch in der Raum-ID! Mapper wurde im Vorraum ausgeschaltet!")
-							ASCIIMapper.active=false	
-						end    				
+							ASCIIMapper.active=false
+						end
     			else
 						-- ok, you are in a new room inside the boundaries. Then we update this room
 						updateroom=true
@@ -111,7 +121,7 @@ function updateMapperWhenRoomChanges()
 				-- in this case we have to expand the field for the map
 				updateroom=true -- after this case, we have to update the room
 				-- check column boundaries
-				if c&lt;ASCIIMapper.minc or c&gt;ASCIIMapper.maxc then 
+				if c&lt;ASCIIMapper.minc or c&gt;ASCIIMapper.maxc then
 					-- the column is outside the column boundaries, hence we add new columns
         	for i=ASCIIMapper.minl,ASCIIMapper.maxl,1 do
         		for j=ASCIIMapper.minr,ASCIIMapper.maxr,1 do
@@ -128,7 +138,7 @@ function updateMapperWhenRoomChanges()
        		ASCIIMapper.maxc=c
       	end
 				-- check row boundaries
-        if r&lt;ASCIIMapper.minr or r&gt;ASCIIMapper.maxr then  
+        if r&lt;ASCIIMapper.minr or r&gt;ASCIIMapper.maxr then
 					-- the row is outside the row boundaries, hence we add new rows
         	for i=ASCIIMapper.minl,ASCIIMapper.maxl,1 do
         		ASCIIMapper.map[i][r]={}
@@ -168,13 +178,13 @@ function updateMapperWhenRoomChanges()
 			-- we check different cases and desided whether to include the room data or not
 			if updateroom then
 				ASCIIMapper.map[l][r][c].visited=true
-				
+
 				ASCIIMapper.map[l][r][c].roomid=roomid
-				
+
 				ASCIIMapper.layer = l
       	ASCIIMapper.row = r
       	ASCIIMapper.column = c
-						        			
+
      		for i=1,#gmcp.MG.room.info.exits,1 do
      			if ASCIIMapper.accepteddirections[gmcp.MG.room.info.exits[i]] then
 						ASCIIMapper.map[l][r][c][gmcp.MG.room.info.exits[i]]=true
@@ -248,12 +258,12 @@ function ASCIIMapper:init()
 		self.mapperblocker={{}}
 		self.active=true
 		-- the room in which the player actually stays is obviously visited
-		self.map[1][1][1].visited = true 
-		self.map[1][1][1].roomid = gmcp.MG.room.info.id	
+		self.map[1][1][1].visited = true
+		self.map[1][1][1].roomid = gmcp.MG.room.info.id
 		-- if the room-id is an empty string, then the player
 		-- stays in an dynamic area. The mapper will not work there
 		-- Hence the player get a warnung an the mapper turns of
-		
+
 		if gmcp.MG.room.info.id == "" then
 			display("WARNUNG: Der Raum ist dynamisch erzeugt. Der Mapper kann hier nicht funktionieren!")
 			self.active=false
@@ -262,7 +272,7 @@ function ASCIIMapper:init()
 			-- save possible exits of this room
 			for i=1,#gmcp.MG.room.info.exits,1 do -- speichere Ausgaenge
 				self.map[1][1][1][gmcp.MG.room.info.exits[i]]=true
-			end	
+			end
 			-- if up or down is a possible exit, we have to mark it
   		if self.map[1][1][1].unten then
   			if self.map[1][1][1].oben then
@@ -276,7 +286,7 @@ function ASCIIMapper:init()
   			end
   		end
 		end
-		
+
 	display("Initialisierung abgeschlossen")
 end
 
@@ -338,7 +348,7 @@ function ASCIIMapper:deleteallblocker()
 end
 
 -------------------------------------------------
--- check whether the id exists already on the 
+-- check whether the id exists already on the
 -- map outside the index (l,r,c)
 -------------------------------------------------
 
@@ -427,10 +437,8 @@ function ASCIIMapper:showmapdoublesize()
 end
 
 function ASCIIMapper:savemap(filename)
-		-- directory of the folder where you like to save your self.column
-		local mapsavedir="C:/Users/Mundron/Desktop/" 
-		echo("Speichere die Karte in "..mapsavedir..filename..".txt\n")
-		file = io.open(mapsavedir..filename..".txt", "w")
+		echo("Speichere die Karte in "..self.savedirectory..filename..".txt\n")
+		file = io.open(self.savedirectory..filename..".txt", "w
 		echo("Es werden die "..(self.maxl-self.minl+1).." Layer gespeichert...\n")
 		for l=self.minl,self.maxl,1 do
 			echo("Layer "..(l-1).." gespeichert.\n")
@@ -443,7 +451,7 @@ end
 
 function ASCIIMapper:savemapdoublesize(filename)
 		-- directory of the folder where you like to save your self.column
-		local mapsavedir="C:/Users/Mundron/Desktop/" 
+		local mapsavedir="C:/Users/Mundron/Desktop/"
 		echo("Speichere die Karte in "..mapsavedir..filename..".txt\n")
 		file = io.open(mapsavedir..filename..".txt", "w")
 		echo("Es werden die "..(self.maxl-self.minl+1).." Layer gespeichert...\n")
@@ -468,7 +476,7 @@ function ASCIIMapper:showmaplayer(l)
 			anzmap[i][j]=" "
 		end
 	end
-	
+
 	-- add the visited rooms
 	for i=1,maxi,1 do
 		for j=1,maxj,1 do
@@ -479,29 +487,29 @@ function ASCIIMapper:showmaplayer(l)
 			end
 		end
 	end
-	
+
 	-- add marks
 	for pos,mark in pairs(self.marks) do
 		if pos[1]==l then
 			anzmap[2*(pos[2]-self.minr+1)][2*(pos[3]-self.minc+1)]=mark
 		end
 	end
-	
+
 	-- mark the position on the map with Z
 	if self.layer==l then
 		anzmap[2*(self.row-self.minr+1)][2*(self.column-self.minc+1)]="Z"
 	end
-	
+
 	-- add east-west pathes
 	for i=1,maxi,1 do
 		-- left boundary
-		if mape[i+self.minr-1][self.minc].westen then 
+		if mape[i+self.minr-1][self.minc].westen then
 			anzmap[2*i][1]="-"
 		else
 			anzmap[2*i][1]=" "
 		end
 		-- between the points
-		for j=2,maxj,1 do 
+		for j=2,maxj,1 do
 			if mape[i+self.minr-1][j+self.minc-1].westen or mape[i+self.minr-1][j+self.minc-2].osten then
 				anzmap[2*i][2*j-1]="-"
 			else
@@ -509,13 +517,13 @@ function ASCIIMapper:showmaplayer(l)
 			end
 		end
 		-- right boundary
-		if mape[i+self.minr-1][self.maxc].osten then 
+		if mape[i+self.minr-1][self.maxc].osten then
 			anzmap[2*i][2*maxj+1]="-"
 		else
 			anzmap[2*i][2*maxj+1]=" "
 		end
 	end
-	
+
 	-- add north-south pathes
 	for j=1,maxj,1 do
 		-- upper boundary
@@ -539,7 +547,7 @@ function ASCIIMapper:showmaplayer(l)
 			anzmap[2*maxi+1][2*j]=" "
 		end
 	end
-	
+
 	-- add diagonal pathes
 	-- upper and lower boundary
 	for j=2,maxj,1 do
@@ -647,7 +655,7 @@ function ASCIIMapper:showmaplayer(l)
 		end
 	end
 
-	
+
 	-- finally we sum up the field to display the map
 	local zeile=""
 	for i=1,2*maxi+1,1 do
@@ -672,7 +680,7 @@ function ASCIIMapper:showmaplayerdoublesize(l)
 			anzmap[i][j]=" "
 		end
 	end
-	
+
 	-- add the visited rooms
 	for i=1,maxi,1 do
 		for j=1,maxj,1 do
@@ -680,42 +688,42 @@ function ASCIIMapper:showmaplayerdoublesize(l)
 				anzmap[3*i][3*j]="O"
 				-- now check for exits and add the lines around the visited room!
 				if mape[i+self.minr-1][j+self.minc-1].norden then
-					anzmap[3*i-1][3*j]="|"	
+					anzmap[3*i-1][3*j]="|"
 				end
 				if mape[i+self.minr-1][j+self.minc-1].nordosten then
-					anzmap[3*i-1][3*j+1]="/"	
+					anzmap[3*i-1][3*j+1]="/"
 				end
 				if mape[i+self.minr-1][j+self.minc-1].osten then
-					anzmap[3*i][3*j+1]="-"	
+					anzmap[3*i][3*j+1]="-"
 				end
 				if mape[i+self.minr-1][j+self.minc-1].suedosten then
-					anzmap[3*i+1][3*j+1]="\\"	
+					anzmap[3*i+1][3*j+1]="\\"
 				end
 				if mape[i+self.minr-1][j+self.minc-1].sueden then
-					anzmap[3*i+1][3*j]="|"	
+					anzmap[3*i+1][3*j]="|"
 				end
 				if mape[i+self.minr-1][j+self.minc-1].suedwesten then
-					anzmap[3*i+1][3*j-1]="/"	
+					anzmap[3*i+1][3*j-1]="/"
 				end
 				if mape[i+self.minr-1][j+self.minc-1].westen then
-					anzmap[3*i][3*j-1]="-"	
+					anzmap[3*i][3*j-1]="-"
 				end
 				if mape[i+self.minr-1][j+self.minc-1].nordwesten then
-					anzmap[3*i-1][3*j-1]="\\"	
+					anzmap[3*i-1][3*j-1]="\\"
 				end
 			else
 				anzmap[3*i][3*j]=" "
 			end
 		end
 	end
-	
+
 	-- add marks
 	for pos,mark in pairs(self.marks) do
 		if pos[1]==l then
 			anzmap[3*(pos[2]-self.minr+1)][3*(pos[3]-self.minc+1)]=mark
 		end
 	end
-	
+
 	-- mark the position on the map with Z
 	if self.layer==l then
 		anzmap[3*(self.row-self.minr+1)][3*(self.column-self.minc+1)]="Z"
@@ -745,7 +753,7 @@ end</script>
 function saveDirectionForMapper(event, room, direction)
 	-- deactivate mapper if you go through
 	-- a block-point
-	
+
 	if ASCIIMapper.mapperblocker[room.id] then
 		if ASCIIMapper.mapperblocker[room.id][direction] then
 			display("Mapper wurde gestoppt")
