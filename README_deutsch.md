@@ -48,7 +48,10 @@ Die dritte Bedingung ist wichtig, da es schwer ist mit Richtungen, wie "Suedosto
 
 
 ## Wie kann ich den ASCII-Mapper 2.0 benutzen?
-Als erstes muss du das Skript "evented navigation" (https://github.com/Mundron/Evented-Navigation) installieren, da dieser vom Mapper benoetigt wird.
+
+Zuerst ist es wichtig, dass der Mapper ein ausgerufenes Ereignis benötigt, welches die benutze Richtung und die Raum ID sendet.
+Ich bevorzuge dafuer das Nummernfeld zu nutzen und habe die Funktionen des Mappers so geschrieben, dass sie mit meinem Skript "evented navigation" (https://github.com/Mundron/Evented-Navigation) zusammen funktionieren.
+Wenn du bereits dieses Skript nutzt, da es zum Beispiel ein anderes Skript von mir benoetigt, dann musst du es keinesfalls nochmal installieren oder etwas aendern. Es reicht einfach zum naechsten Schritt zu gehen:
 Dann installiert man "Mapper_script_part" und "Mapper_alias_part".
 Der "script part" enthaelt den Basiscode mit all den noetigen Funktionen.
 Um es im Spiel zu nutzen, muss man Aliase erstellen, welche die Funktionen des Mappers aufrufen.
