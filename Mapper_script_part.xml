@@ -33,7 +33,6 @@
 --
 --	marks = special marked rooms
 
-
 ASCIIMapper = {minr=1, maxr=1,
 							minc=1, maxc=1,
 							minl=1, maxl=1,
@@ -94,7 +93,7 @@ function updateMapperWhenRoomChanges()
 				-- hence, we check if there exists the room id on the map at some position different to the new room
 				if ASCIIMapper:checkID(roomid,l,r,c) then
 					-- in that case, the mapper can't be use because the map doesn't satisfy the conditions for the mapper
-					display("FEHLER: Dieser Raum befindet sich auf der Karte schon an einer anderen Stelle! Mapper wurde deaktiviert")
+					ASCIIMapper:error("Dieser Raum befindet sich auf der Karte schon an einer anderen Stelle! Mapper wurde deaktiviert")
 					ASCIIMapper.active=false
 				else
 					-- Here, we know that the new index is inside the boundary and the room id doesn't
@@ -109,7 +108,7 @@ function updateMapperWhenRoomChanges()
 						else
 							-- Fuck, no! You were already in this room but you got somehow to here
 							-- although you shouldn't get here!
-							display("FEHLER: Widerspruch in der Raum-ID! Mapper wurde im Vorraum ausgeschaltet!")
+							ASCIIMapper:error("Widerspruch in der Raum-ID! Mapper wurde im Vorraum ausgeschaltet!")
 							ASCIIMapper.active=false
 						end
     			else
@@ -190,7 +189,7 @@ function updateMapperWhenRoomChanges()
 						ASCIIMapper.map[l][r][c][gmcp.MG.room.info.exits[i]]=true
   				else
 						-- Give warning because the room has some exits which are not valid for the mapper
-						display("WARNUNG: Dieser Raum hat den Ausgang "..gmcp.MG.room.info.exits[i].." welches fuer den Mapper nicht geeignet ist!")
+						ASCIIMapper:warning("Dieser Raum hat den Ausgang "..gmcp.MG.room.info.exits[i].." welches fuer den Mapper nicht geeignet ist!")
 					end
     		end
 				-- if up or down are exits, then we have to mark it on the map
@@ -208,7 +207,7 @@ function updateMapperWhenRoomChanges()
 			end
 		else
 			-- if you move to a not allowed direction
-			display("FEHLER: Nicht zulaessige Bewegungsrichtung benutzt! Mapper deaktiviert!")
+			ASCIIMapper:error("Nicht zulaessige Bewegungsrichtung benutzt! Mapper deaktiviert!")
 			ASCIIMapper.active=false
 		end -- if player comes through valid direction
 	end -- if mapper is active
@@ -242,7 +241,6 @@ end -- function</script>
 -- Initialize the mapper
 -------------------------------------------------
 function ASCIIMapper:init()
-		display("Starte Initialisierung")
 		self.minr=1
 		self.maxr=1
 		self.minc=1
@@ -287,7 +285,7 @@ function ASCIIMapper:init()
   		end
 		end
 
-	display("Initialisierung abgeschlossen")
+	self:info("Initialisierung abgeschlossen")
 end
 
 -------------------------------------------------
@@ -315,7 +313,7 @@ function ASCIIMapper:addblocker(dir)
 		dir=self.translateddirections[dir]
 	end
 	self.mapperblocker[gmcp.MG.room.info.id][dir]=true
-	display("Mapper wird von diesem Raum nach "..dir.." gestoppt.")
+	self:info("Mapper wird von diesem Raum nach "..dir.." gestoppt.")
 end
 
 -------------------------------------------------
@@ -329,12 +327,12 @@ function ASCIIMapper:deleteblocker(dir)
 	if self.mapperblocker[gmcp.MG.room.info.id] then
 		if self.mapperblocker[gmcp.MG.room.info.id][dir] then
 			self.mapperblocker[gmcp.MG.room.info.id][dir]=nil
-			display("Stopper in Richtung "..dir.." wurde aus diesem Raum entfernt.")
+			self:info("Stopper in Richtung "..dir.." wurde aus diesem Raum entfernt.")
 		else
-			display("Dieser Raum hat keinen Stopper in Richtung "..dir..".")
+			self:info("Dieser Raum hat keinen Stopper in Richtung "..dir..".")
 		end
 	else
-		display("Dieser Raum hat ueberhaupt keine Stopper registriert.")
+		self:info("Dieser Raum hat ueberhaupt keine Stopper registriert.")
 	end
 end
 
@@ -344,7 +342,7 @@ end
 
 function ASCIIMapper:deleteallblocker()
 	self.mapperblocker={}
-	display("Alle Stopper wurden radikal geloescht.")
+	self:info("Alle Stopper wurden radikal geloescht.")
 end
 
 -------------------------------------------------
@@ -377,9 +375,9 @@ end
 function ASCIIMapper:continue()
 	ASCIIMapper.active= (self.map[self.layer][self.row][self.column].roomid == gmcp.MG.room.info.id)
 	if ASCIIMapper.active then
-		display("Mapper wird weiter ausgefuehrt")
+		self:info("Mapper wird weiter ausgefuehrt")
 	else
-		display("Du befindest dich nicht in dem Raum, in dem der Mapper ausgeschaltet wurde.")
+		self:error("Du befindest dich nicht in dem Raum, in dem der Mapper ausgeschaltet wurde.")
 	end
 end
 
@@ -388,7 +386,7 @@ end
 -------------------------------------------------
 
 function ASCIIMapper:stop()
-	display("Mapper wurde angehalten")
+	self:info("Mapper wurde angehalten")
 	self.active=false
 	self.showmapdoublesize()
 end
@@ -398,11 +396,30 @@ end
 -------------------------------------------------
 
 function ASCIIMapper:roominfo()
-	display("Index ("..self.layer.."|"..self.row.."|"..self.column..") und Raum-ID "..self.map[self.layer][self.row][self.column].roomid)
+	self:info("Index ("..self.layer.."|"..self.row.."|"..self.column..") und Raum-ID "..self.map[self.layer][self.row][self.column].roomid)
 end
 
 
-</script>
+function ASCIIMapper:warning(text)
+	echo("\n\n\n")
+	decho("&lt;255,255,0:0,0,0&gt;WARNUNG (ASCIIMapper): ")
+	echo(text)
+	echo("\n\n\n")
+end
+
+function ASCIIMapper:error(text)
+	echo("\n\n\n")
+	decho("&lt;255,155,0:0,0,0&gt;WARNUNG (ASCIIMapper): ")
+	echo(text)
+	echo("\n\n\n")
+end
+
+function ASCIIMapper:info(text)
+	echo("\n\n\n")
+	decho("&lt;110,160,255:0,0,0&gt;Information (ASCIIMapper): ")
+	echo(text)
+	echo("\n\n\n")
+end</script>
 				<eventHandlerList />
 			</Script>
 			<Script isActive="yes" isFolder="no">
@@ -437,31 +454,31 @@ function ASCIIMapper:showmapdoublesize()
 end
 
 function ASCIIMapper:savemap(filename)
-		echo("Speichere die Karte in "..self.savedirectory..filename..".txt\n")
-		file = io.open(self.savedirectory..filename..".txt", "w
+		self:info("Speichere die Karte in "..self.savedirectory..filename..".txt\n")
+		file = io.open(self.savedirectory..filename..".txt", "w")
 		echo("Es werden die "..(self.maxl-self.minl+1).." Layer gespeichert...\n")
 		for l=self.minl,self.maxl,1 do
-			echo("Layer "..(l-1).." gespeichert.\n")
 			file:write("\n\nLayer "..(l-1).."\n\n")
+			echo("Layer "..(l-1).." gespeichert.\n")
 			file:write(self:showmaplayer(l))
 		end
 		io.close(file)
-		echo("Speicherungen in die Datei "..filename..".txt abgeschlossen.")
+		echo("Speicherungen in die Datei "..filename..".txt abgeschlossen.\n\n\n")
 end
 
 function ASCIIMapper:savemapdoublesize(filename)
 		-- directory of the folder where you like to save your self.column
 		local mapsavedir="C:/Users/Mundron/Desktop/"
-		echo("Speichere die Karte in "..mapsavedir..filename..".txt\n")
+		self:info("Speichere die Karte in "..mapsavedir..filename..".txt\n")
 		file = io.open(mapsavedir..filename..".txt", "w")
 		echo("Es werden die "..(self.maxl-self.minl+1).." Layer gespeichert...\n")
 		for l=self.minl,self.maxl,1 do
-			echo("Layer "..(l-1).." gespeichert.\n")
 			file:write("\n\nLayer "..(l-1).."\n\n")
+			echo("Layer "..(l-1).." gespeichert.\n")
 			file:write(self:showmaplayerdoublesize(l))
 		end
 		io.close(file)
-		echo("Speicherungen in die Datei "..filename..".txt abgeschlossen.")
+		echo("Speicherungen in die Datei "..filename..".txt abgeschlossen.\n\n\n")
 end
 
 function ASCIIMapper:showmaplayer(l)
@@ -756,11 +773,11 @@ function saveDirectionForMapper(event, room, direction)
 
 	if ASCIIMapper.mapperblocker[room.id] then
 		if ASCIIMapper.mapperblocker[room.id][direction] then
-			display("Mapper wurde gestoppt")
+			ASCIIMapper:info("Mapper wurde gestoppt")
 			ASCIIMapper.active=false
 		else
 			if not ASCIIMapper.active then
-				display("Mapper wurde wieder gestartet!")
+				ASCIIMapper:info("Mapper wurde wieder gestartet!")
 			end
 			ASCIIMapper.active=true
 		end
