@@ -56,7 +56,31 @@ Dann installiert man "Mapper_script_part" und "Mapper_alias_part".
 Der "script part" enthaelt den Basiscode mit all den noetigen Funktionen.
 Um es im Spiel zu nutzen, muss man Aliase erstellen, welche die Funktionen des Mappers aufrufen.
 Dazu sind die Aliase in "alias part" ein Vorschlag, wie das umgesetzt werden kann.
-Ich werde hier somit nur die Funktionen selbst erlaeutern und du kannst selbst schauen, wie man sie anwendet in den hochgeladenen Aliasen.
+
+
+## Wie kann ich den ASCII-Mapper 2.0 im Spiel bedienen?
+Wenn du meinen "alias part" benutzen moechtest, dann kannst du folgende Aliase benutzen:
+
+### \#mapper <an|aus|weiter>
+Wie der Name schon vermuten laesst, kann man mit "\#mapper an" den Mapper einschalten. Dabei wird es initialisiert mit einer leeren Karten.
+Desweiteren stoppt "\mapper aus" den Mapper. Du kannst jedoch weiter jeder Zeit dir die Karte anzeigen lassen, solange du den Mapper nicht neu initialisiert hast.
+Schliesslich wird der Mapper mit "\#mapper weiter" wieder weiter ausgefuehrt, vorausgesetzt, dass du in dem Raum stehst, wo der Mapper angehalten wurde.
+
+### \#map
+Dies zeigt die dir doppel grosse Karte im Spiel an. Wenn du die kleine Version bevorzugst, dann musst du im Namen der Funktion, die in diesem Alias stehst, "doublesize" einfach loeschen.
+
+### \#markiere <X>
+X muss eine Ziffer oder ein Buchstaben sein. Dieses Zeichen wir auf der angezeigten Karte zu diesem Raum angezeigt.
+
+### \#addstop <ausgang>
+Das Arguement sollte ein Ausgang in diesem Raum sein. Wenn du diesen Ausgang dann benutzt, dann stoppt sich der Mapper automatisch und geht auch automatisch wieder an, wenn ein anderer Ausgang genutzt wird.
+
+### \#delstop <ausgang>
+Diese Funktion kann sowohl mit oder ohne Argument aufgerufen werden. Wenn du als Argument einen Ausgang eingibst, dann wird der entsprechende Stopper, sie "\#addstop" wieder geloescht. Wird es ganz ohne ein Argument, also "\#delstop" aufgerufen, dann werden alle existierenden Stopper geloescht.
+
+### \#savemap <filename>
+Diese Funktion speichert die Karte in einer Datei, dessen Name durch das Argument bestimmt wird. Aber um diese zu nutzen, muss einmal der bevorzugte Ordner im Skript im Element "Mapper core" in Zeile 33 (savedirectory="C:/") eingegeben werden.
+Wenn du die kleine Version bevorzugst, dann musst du im Namen der Funktion, die in diesem Alias stehst, "doublesize" einfach loeschen.
 
 ## ASCII Mapper Functions
 

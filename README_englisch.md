@@ -57,9 +57,29 @@ Next, you install "Mapper_script_part" and "Mapper_alias_part".
 The "script part" contains the base code with all the nessesary functions.
 But you use it ingame, you should create some alias which calls the mapper functions.
 Therefore, the "alias part" is one possible way.
-Here, I will just explain which functions can be used and you can check yourself how to apply them in the uploaded alias.
 
+## How to handle ASCII-Mapper 2.0 ingame?
+If you like to use my "alias part", then you can use the following aliases:
 
+### \#mapper <an|aus|weiter>
+As the name suggest (in german) "\#mapper an" turns the mapper on. It will be initialized with an empty map. Further, "\#mapper" aus stops the mapper.
+You can still see the map anytime until you initialize the mapper again. Finally, "\#mapper weiter" let the mapper continue, if and only if you stay in the same room where to stopped the mapper.
+
+### \#map
+It shows your the double sized map ingame. If you prefer the small version of the map, you have to change this alias. Just delete "doublesize" in the name of the function, used in this alias.
+
+### \#markiere <X>
+X has to be a digit or a letter. This sign will appear on the map in this room.
+
+### \#addstop <exit>
+The argument should be an exit in your room. The mapper will stop if you use this exit in this room and continue if you use an other exit in this room.
+
+### \#delstop <exit>
+You can call "\#delstop" either with an exit to delete it as a stopper, sieh "\#addstop" or you can call it without any argument, just "\#delstop" to delete all existing stopper.
+
+### \#savemap <filename>
+It saves your map (double size) in the File, whose name is given by the argument. But to use this, you have to include once your prefered folder in script in the item called "Mapper core" in line 33 (savedirectory="C:/").
+If you prefer the small version of the map, you can just delete "doublesize" in the name of the function, used in this alias.
 
 ## ASCII Mapper Functions
 
