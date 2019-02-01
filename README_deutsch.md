@@ -52,11 +52,8 @@ Die dritte Bedingung ist wichtig, da es schwer ist mit Richtungen, wie "Suedosto
 Zuerst ist es wichtig, dass der Mapper ein ausgerufenes Ereignis benötigt, welches die benutze Richtung und die Raum ID sendet.
 Ich bevorzuge dafuer das Nummernfeld zu nutzen und habe die Funktionen des Mappers so geschrieben, dass sie mit meinem Skript "evented navigation" (https://github.com/Mundron/Evented-Navigation) zusammen funktionieren.
 Wenn du bereits dieses Skript nutzt, da es zum Beispiel ein anderes Skript von mir benoetigt, dann musst du es keinesfalls nochmal installieren oder etwas aendern. Es reicht einfach zum naechsten Schritt zu gehen:
-Dann installiert man "Mapper_script_part" und "Mapper_alias_part".
-Der "script part" enthaelt den Basiscode mit all den noetigen Funktionen.
-Um es im Spiel zu nutzen, muss man Aliase erstellen, welche die Funktionen des Mappers aufrufen.
-Dazu sind die Aliase in "alias part" ein Vorschlag, wie das umgesetzt werden kann.
 
+Dann installiert man "ASCIIMapper_Mundron.xml" indem man die Datei runter laedt, dann im Mudlet Alt+O drueckt oder im Menue auf Werkzeuge > Pakete. Dann auf "installieren" und die runtergeladene Datei auswaehlen. Fertig.
 
 ## Wie kann ich den ASCII-Mapper 2.0 im Spiel bedienen?
 Wenn du meinen "alias part" benutzen moechtest, dann kannst du folgende Aliase benutzen:
