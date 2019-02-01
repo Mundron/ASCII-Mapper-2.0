@@ -870,7 +870,7 @@ function initGMCP()
     sendGMCP( [[Core.Supports.Set [ "MG.char 1", "MG.room 1", "comm.channel 1" ] ]])
 end</script>
 			<eventHandlerList>
-				<string>sysLoadEvent</string>
+				<string>gmcp.Char</string>
 			</eventHandlerList>
 		</Script>
 	</ScriptPackage>
